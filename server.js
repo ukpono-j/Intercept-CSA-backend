@@ -18,15 +18,16 @@ const app = express();
 app.use(cors({
   origin: [
     'http://localhost:5173',
-    'http://localhost:3000',
     'http://localhost:5174',
-    'https://intercept-csa-backend.onrender.com',
+    'http://localhost:5175',
+    'http://localhost:3000',
+    'https://intercept-csa-backendrender.com',
     'https://intercept-csa-frontend-cgw2g9seo-ukponojs-projects.vercel.app',
     'https://intercept-csa-frontend.vercel.app',
     'https://intercept-csa-admin.vercel.app',
-    'http://localhost:5175',
   ],
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  methods: ['GET', 'GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // Include OPTIONS for preflight
+  allowedHeaders: ['Content-Type', 'Authorization'], // Allow custom headers
   credentials: true,
 }));
 app.use(express.json());
