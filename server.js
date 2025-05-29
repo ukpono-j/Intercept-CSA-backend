@@ -23,6 +23,7 @@ app.use(cors({
     'https://intercept-csa-backend.onrender.com',
     'https://intercept-csa-frontend-cgw2g9seo-ukponojs-projects.vercel.app',
     'https://intercept-csa-frontend.vercel.app',
+    'https://intercept-csa-admin.vercel.app',
   ],
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   credentials: true,
