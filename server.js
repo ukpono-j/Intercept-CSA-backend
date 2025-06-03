@@ -25,7 +25,7 @@ app.use(cors({
     'https://intercept-csa-frontend-cgw2g9seo-ukponojs-projects.vercel.app',
     'https://intercept-csa-frontend.vercel.app',
     'https://intercept-csa-admin.vercel.app',
-    'http://interceptcsa.org/',
+    'https://interceptcsa.org/',
     'https://intercept-csa-backend.onrender.com'
   ],
   methods: ['GET', 'GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // Include OPTIONS for preflight
