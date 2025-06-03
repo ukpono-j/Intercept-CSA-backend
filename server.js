@@ -26,6 +26,7 @@ app.use(cors({
     'https://intercept-csa-frontend.vercel.app',
     'https://intercept-csa-admin.vercel.app',
     'http://interceptcsa.org/',
+    'https://intercept-csa-backend.onrender.com'
   ],
   methods: ['GET', 'GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // Include OPTIONS for preflight
   allowedHeaders: ['Content-Type', 'Authorization'], // Allow custom headers
