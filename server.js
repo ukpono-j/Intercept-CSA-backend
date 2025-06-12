@@ -28,15 +28,14 @@ app.use(cors({
     'https://interceptcsa.org',
     'https://intercept-csa-backend.onrender.com'
   ],
-  methods: ['GET', 'GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // Include OPTIONS for preflight
-  allowedHeaders: ['Content-Type', 'Authorization'], // Allow custom headers
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true,
 }));
 app.use(express.json());
 
 // Log static file requests
 app.use('/Uploads', (req, res, next) => {
-  console.log(`[${new Date().toISOString()}] Requested: ${req.originalUrl}`);
   next();
 });
 
@@ -44,7 +43,6 @@ app.use('/Uploads', (req, res, next) => {
 app.use('/Uploads', express.static(path.join(__dirname, 'Uploads'), {
   maxAge: '1d',
   setHeaders: (res, filePath) => {
-    console.log(`[${new Date().toISOString()}] Serving: ${filePath}`);
     if (filePath.endsWith('.jpg') || filePath.endsWith('.png')) {
       res.setHeader('Content-Type', 'image/jpeg');
     }
@@ -54,7 +52,6 @@ app.use('/Uploads', express.static(path.join(__dirname, 'Uploads'), {
 
 // Handle file not found
 app.use('/Uploads', (req, res, next) => {
-  console.log(`[${new Date().toISOString()}] File not found: ${req.originalUrl}`);
   res.status(404).send('Image not found');
 });
 
@@ -63,6 +60,7 @@ app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/users', require('./routes/userRoutes'));
 app.use('/api/blogs', require('./routes/blogRoutes'));
 app.use('/api/activities', require('./routes/activityRoutes'));
+app.use('/api/reports', require('./routes/reportRoutes'));
 
 // Scheduled task to publish scheduled posts
 const Blog = require('./models/Blog');
@@ -84,9 +82,6 @@ cron.schedule('*/1 * * * *', async () => {
         type: 'blog',
         details: `Published blog: ${blog.title}`,
       });
-    }
-    if (blogs.length > 0) {
-      console.log(`Published ${blogs.length} scheduled blog(s)`);
     }
   } catch (err) {
     console.error('Error in scheduled post task:', err.message);

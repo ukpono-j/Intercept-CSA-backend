@@ -8,5 +8,5 @@ bcrypt.hash(password, saltRounds, (err, hash) => {
     console.error('Error hashing password:', err);
     return;
   }
-  console.log('Hashed Password:', hash);
+  // console.log('Hashed Password:', hash);
 });

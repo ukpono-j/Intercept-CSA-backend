@@ -15,7 +15,7 @@ const ensureUploadsDir = async () => {
   if (uploadDirInitialized) return;
   try {
     await fs.mkdir(uploadDir, { recursive: true });
-    console.log('Uploads directory verified/created');
+    // console.log('Uploads directory verified/created');
     uploadDirInitialized = true;
   } catch (err) {
     console.error('Error creating Uploads directory:', err);
@@ -63,7 +63,7 @@ const cleanupFile = async (filename) => {
   if (!filename) return;
   try {
     await fs.unlink(path.join(uploadDir, filename));
-    console.log(`Cleaned up file: ${filename}`);
+    // console.log(`Cleaned up file: ${filename}`);
   } catch (err) {
     console.error(`Error cleaning up file ${filename}:`, err);
   }
@@ -73,7 +73,7 @@ const cleanupFile = async (filename) => {
 // @route   GET /api/blogs
 // @access  Public for status=published, Private/Admin otherwise
 const getBlogs = asyncHandler(async (req, res) => {
-  console.log('Received GET /api/blogs request', req.query);
+  // console.log('Received GET /api/blogs request', req.query);
   try {
     const { search, status, sortBy } = req.query;
     const query = {};
@@ -105,7 +105,7 @@ const getBlogs = asyncHandler(async (req, res) => {
       .sort(sortOptions)
       .lean();
 
-    console.log(`Found ${blogs.length} blogs`);
+    // console.log(`Found ${blogs.length} blogs`);
     res.json(blogs);
   } catch (error) {
     console.error('Error fetching blogs:', error);
@@ -142,7 +142,7 @@ const getBlogById = asyncHandler(async (req, res) => {
 // @access  Private/Admin
 const createBlog = asyncHandler(async (req, res) => {
   try {
-    console.log('Creating blog with data:', req.body, req.file);
+    // console.log('Creating blog with data:', req.body, req.file);
     const { title, excerpt, content, category, tags, status, featured, scheduledAt, author } = req.body;
 
     if (!title || !content || !author) {
