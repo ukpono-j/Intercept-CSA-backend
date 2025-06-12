@@ -5,6 +5,7 @@ const { errorHandler } = require('./middleware/errorMiddleware');
 const path = require('path');
 const cors = require('cors');
 const cron = require('node-cron');
+const fs = require('fs');
 
 // Load environment variables
 dotenv.config();
@@ -14,7 +15,13 @@ connectDB();
 
 const app = express();
 
-// Middleware
+// Create Uploads directory if it doesn't exist
+const uploadDir = path.join(__dirname, 'Uploads');
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir);
+}
+
+// CORS configuration
 app.use(cors({
   origin: [
     'http://localhost:5173',
@@ -26,16 +33,20 @@ app.use(cors({
     'https://intercept-csa-frontend.vercel.app',
     'https://intercept-csa-admin.vercel.app',
     'https://interceptcsa.org',
-    'https://intercept-csa-backend.onrender.com'
+    'https://intercept-csa-backend.onrender.com',
   ],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true,
+  optionsSuccessStatus: 204,
 }));
+
+// Middleware
 app.use(express.json());
 
 // Log static file requests
 app.use('/Uploads', (req, res, next) => {
+  console.log(`Serving static file: ${req.path}`);
   next();
 });
 
@@ -56,11 +67,13 @@ app.use('/Uploads', (req, res, next) => {
 });
 
 // Routes
+console.log('Registering routes...');
 app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/users', require('./routes/userRoutes'));
 app.use('/api/blogs', require('./routes/blogRoutes'));
 app.use('/api/activities', require('./routes/activityRoutes'));
 app.use('/api/reports', require('./routes/reportRoutes'));
+console.log('Routes registered successfully');
 
 // Scheduled task to publish scheduled posts
 const Blog = require('./models/Blog');
