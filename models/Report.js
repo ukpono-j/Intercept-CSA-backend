@@ -22,6 +22,10 @@ const reportSchema = new mongoose.Schema({
     enum: ['pending', 'reviewed', 'resolved'],
     default: 'pending',
   },
+  isRead: {
+    type: Boolean,
+    default: false,
+  },
 }, {
   timestamps: true,
 });
