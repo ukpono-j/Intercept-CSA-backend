@@ -75,6 +75,7 @@ app.use('/api/activities', require('./routes/activityRoutes'));
 app.use('/api/reports', require('./routes/reportRoutes'));
 app.use('/api/newsletter', require('./routes/newsletterRoutes'));
 app.use('/api/resources', require('./routes/resourceRoutes'));
+app.use('/api/podcast', require('./routes/podcastRoutes'));
 console.log('Routes registered successfully');
 
 // Scheduled task to publish scheduled posts
