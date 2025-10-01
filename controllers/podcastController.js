@@ -41,21 +41,50 @@ const storage = multer.diskStorage({
 });
 
 const fileFilter = (req, file, cb) => {
-  const filetypes = /jpeg|jpg|png|mp3/;
-  const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
-  const mimetype = filetypes.test(file.mimetype);
+  // Define allowed file types
+  const imageTypes = /jpeg|jpg|png/;
+  const audioTypes = /mp3|mpeg/;
 
-  if (extname && mimetype) {
-    cb(null, true);
-  } else {
-    cb(new Error('Only JPEG, PNG images, or MP3 audio files are allowed'), false);
+  const extname = path.extname(file.originalname).toLowerCase();
+
+  // Check if it's an image file
+  if (file.fieldname === 'image') {
+    const isValidImage = imageTypes.test(extname.slice(1)) &&
+      (file.mimetype.startsWith('image/jpeg') ||
+        file.mimetype.startsWith('image/png') ||
+        file.mimetype === 'image/jpg');
+
+    if (isValidImage) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only JPEG and PNG images are allowed for image field'), false);
+    }
+  }
+  // Check if it's an audio file
+  else if (file.fieldname === 'audio') {
+    const isValidAudio = audioTypes.test(extname.slice(1)) &&
+      (file.mimetype.startsWith('audio/mpeg') ||
+        file.mimetype.startsWith('audio/mp3') ||
+        file.mimetype === 'audio/mpeg3');
+
+    if (isValidAudio) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only MP3 audio files are allowed for audio field'), false);
+    }
+  }
+  else {
+    cb(new Error('Unexpected field'), false);
   }
 };
 
 const upload = multer({
   storage,
   fileFilter,
-  limits: { fileSize: 10 * 1024 * 1024, files: 2 } // Allow larger files for audio
+  limits: {
+    fileSize: 50 * 1024 * 1024, // 50MB for audio files
+    files: 2
+  }
 });
 
 const cleanupFile = async (filename) => {
@@ -99,7 +128,11 @@ const getPodcasts = asyncHandler(async (req, res) => {
     const podcasts = await Podcast.find(query)
       .populate('author', 'name')
       .sort(sortOptions)
+      .select('+updatedAt') // EXPLICITLY INCLUDE updatedAt
       .lean();
+
+    console.log('Returning podcasts count:', podcasts.length); // LOG COUNT
+    console.log('Sample podcast updatedAt:', podcasts[0]?.updatedAt); // LOG TIMESTAMP
 
     res.json(podcasts);
   } catch (error) {
@@ -132,24 +165,37 @@ const getPodcastById = asyncHandler(async (req, res) => {
 });
 
 // @desc    Create podcast episode
-// @route   POST /api/podcasts
+// @route   POST /api/podcast
 // @access  Private/Admin
 const createPodcast = asyncHandler(async (req, res) => {
   try {
+    console.log('Request body:', req.body); // Debug log
+    console.log('Request files:', req.files); // Debug log
+    console.log('Request user:', req.user); // Debug log
+
     const { title, excerpt, description, category, tags, status, featured, scheduledAt, author, duration } = req.body;
 
     if (!title || !description || !author) {
       if (req.files?.image?.[0]) await cleanupFile(req.files.image[0].filename);
       if (req.files?.audio?.[0]) await cleanupFile(req.files.audio[0].filename);
-      res.status(400);
-      throw new Error('Title, description, and author are required');
+      return res.status(400).json({ message: 'Title, description, and author are required' });
+    }
+
+    // Check for duplicate podcast title (case-insensitive)
+    const existingPodcast = await Podcast.findOne({
+      title: { $regex: new RegExp(`^${title.trim()}$`, 'i') }
+    });
+
+    if (existingPodcast) {
+      if (req.files?.image?.[0]) await cleanupFile(req.files.image[0].filename);
+      if (req.files?.audio?.[0]) await cleanupFile(req.files.audio[0].filename);
+      return res.status(400).json({ message: 'A podcast with this title already exists. Please choose a different title.' });
     }
 
     if (!mongoose.Types.ObjectId.isValid(author)) {
       if (req.files?.image?.[0]) await cleanupFile(req.files.image[0].filename);
       if (req.files?.audio?.[0]) await cleanupFile(req.files.audio[0].filename);
-      res.status(400);
-      throw new Error('Invalid author ID format');
+      return res.status(400).json({ message: 'Invalid author ID format' });
     }
 
     let parsedTags = [];
@@ -158,6 +204,7 @@ const createPodcast = asyncHandler(async (req, res) => {
         parsedTags = typeof tags === 'string' ? JSON.parse(tags) : tags;
       } catch (err) {
         console.error('Error parsing tags:', err);
+        parsedTags = [];
       }
     }
 
@@ -165,22 +212,20 @@ const createPodcast = asyncHandler(async (req, res) => {
       if (!scheduledAt) {
         if (req.files?.image?.[0]) await cleanupFile(req.files.image[0].filename);
         if (req.files?.audio?.[0]) await cleanupFile(req.files.audio[0].filename);
-        res.status(400);
-        throw new Error('Schedule date is required for scheduled posts');
+        return res.status(400).json({ message: 'Schedule date is required for scheduled posts' });
       }
       if (new Date(scheduledAt) <= new Date()) {
         if (req.files?.image?.[0]) await cleanupFile(req.files.image[0].filename);
         if (req.files?.audio?.[0]) await cleanupFile(req.files.audio[0].filename);
-        res.status(400);
-        throw new Error('Schedule date must be in the future');
+        return res.status(400).json({ message: 'Schedule date must be in the future' });
       }
     }
 
     const podcastData = {
-      title,
-      excerpt,
+      title: title.trim(),
+      excerpt: excerpt || '',
       description,
-      category,
+      category: category || '',
       tags: parsedTags,
       status: status || 'draft',
       featured: featured === 'true' || featured === true,
@@ -191,11 +236,13 @@ const createPodcast = asyncHandler(async (req, res) => {
       duration: duration || '',
     };
 
+    console.log('Creating podcast with data:', podcastData); // Debug log
+
     const podcast = await Podcast.create(podcastData);
 
     await Activity.create({
       action: `Podcast episode ${podcast.status === 'published' ? 'published' : 'created'}`,
-      user: req.user?.name || author,
+      user: req.user?.name || 'Unknown',
       type: 'podcast',
       details: `Podcast: ${podcast.title}`
     });
@@ -205,9 +252,22 @@ const createPodcast = asyncHandler(async (req, res) => {
     console.error('Error creating podcast:', error);
     if (req.files?.image?.[0]) await cleanupFile(req.files.image[0].filename);
     if (req.files?.audio?.[0]) await cleanupFile(req.files.audio[0].filename);
-    res.status(error.status || 500).json({ message: error.message || 'Server error creating podcast episode' });
+
+    // Handle MongoDB duplicate key error
+    if (error.code === 11000) {
+      return res.status(400).json({ message: 'A podcast with this title already exists.' });
+    }
+
+    res.status(500).json({
+      message: error.message || 'Server error creating podcast episode',
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
   }
 });
+
+
+
+
 
 // @desc    Update podcast episode
 // @route   PUT /api/podcasts/:id
@@ -255,9 +315,18 @@ const updatePodcast = asyncHandler(async (req, res) => {
       throw new Error('Schedule date is required for scheduled posts');
     }
 
-    Object.assign(podcast, updates);
-    const updatedPodcast = await podcast.save();
+    const updatedPodcast = await Podcast.findByIdAndUpdate(
+      req.params.id,
+      { ...updates, updatedAt: Date.now() },
+      { new: true, runValidators: true }
+    ).populate('author', 'name');
 
+    if (!updatedPodcast) {
+      if (req.files?.image?.[0]) await cleanupFile(req.files.image[0].filename);
+      if (req.files?.audio?.[0]) await cleanupFile(req.files.audio[0].filename);
+      res.status(404);
+      throw new Error('Podcast episode not found after update');
+    }
     if (req.files?.image?.[0] && oldImage) {
       await cleanupFile(oldImage.replace('/Uploads/', ''));
     }

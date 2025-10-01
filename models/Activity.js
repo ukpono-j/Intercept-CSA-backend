@@ -13,7 +13,7 @@ const activitySchema = new mongoose.Schema({
   },
   type: {
     type: String,
-    enum: ['user', 'blog', 'comment', 'newsletter', 'resource'],
+    enum: ['user', 'blog', 'comment', 'newsletter', 'resource', 'podcast'],
     required: [true, 'Type is required'],
   },
   createdAt: {

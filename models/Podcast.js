@@ -5,6 +5,7 @@ const podcastSchema = new mongoose.Schema({
     type: String,
     required: [true, 'Title is required'],
     trim: true,
+    unique: true, // Add this line
   },
   excerpt: {
     type: String,
@@ -67,6 +68,9 @@ const podcastSchema = new mongoose.Schema({
     default: Date.now,
   },
 });
+
+// Create case-insensitive unique index
+podcastSchema.index({ title: 1 }, { unique: true, collation: { locale: 'en', strength: 2 } });
 
 // Update updatedAt before saving
 podcastSchema.pre('save', function (next) {

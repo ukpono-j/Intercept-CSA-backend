@@ -34,6 +34,7 @@ app.use(cors({
     'https://intercept-csa-admin.vercel.app',
     'https://interceptcsa.org',
     'https://intercept-csa-backend.onrender.com',
+    'https://57c5beacbb8a.ngrok-free.app',
   ],
 methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
